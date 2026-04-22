@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Wizard : MonoBehaviour
 {
@@ -10,6 +11,8 @@ public class Wizard : MonoBehaviour
     public float health = 10f;
     public Color color;
     public float invincibilityTime;
+    public float elemDamageMod;
+    public Image healthBar;
 
     [Header("Set Dynamically")] [SerializeField]
     public elemType type = elemType.water;
@@ -18,6 +21,8 @@ public class Wizard : MonoBehaviour
     public Renderer render;
     public bool showingDamage;
     public float lastTakenDamage;
+
+    private float maxHealth, height, width;
 
 
     void Awake()
@@ -36,6 +41,11 @@ public class Wizard : MonoBehaviour
     void Start()
     {
         def = Main.GetElemDef(type);
+
+        maxHealth = health;
+        width = healthBar.rectTransform.rect.width;
+        height = healthBar.rectTransform.rect.height;
+
         Invoke("Shoot", def.fireRate);
     }
 
@@ -109,6 +119,62 @@ public class Wizard : MonoBehaviour
             case "EnemyProjectile":
                 Projectile p = other.GetComponent<Projectile>();
 
+                switch (type)
+                {
+                    case elemType.fire:
+                        switch (p.type)
+                        {
+                            case elemType.water:
+                                DamageTaken(p.damage * (1f + elemDamageMod));
+                                break;
+                            case elemType.fire:
+                                DamageTaken(p.damage);
+                                break;
+                            case elemType.grass:
+                                DamageTaken(p.damage * (1f - elemDamageMod));
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+
+                    case elemType.water:
+                        switch (p.type)
+                        {
+                            case elemType.water:
+                                DamageTaken(p.damage);
+                                break;
+                            case elemType.fire:
+                                DamageTaken(p.damage * (1f - elemDamageMod));
+                                break;
+                            case elemType.grass:
+                                DamageTaken(p.damage * (1f + elemDamageMod));
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+
+                    case elemType.grass:
+                        switch (p.type)
+                        {
+                            case elemType.water:
+                                DamageTaken(p.damage * (1f - elemDamageMod));
+                                break;
+                            case elemType.fire:
+                                DamageTaken(p.damage * (1f + elemDamageMod));
+                                break;
+                            case elemType.grass:
+                                DamageTaken(p.damage);
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+                    
+                    default:
+                        break;
+                }
                 DamageTaken(p.damage);
                 Destroy(other); 
                 break;
@@ -163,7 +229,8 @@ public class Wizard : MonoBehaviour
         
         health -= dmg;
 
-        HealthBar.TakeDamage(dmg);
+        float temp = (health / maxHealth) * width;
+        healthBar.rectTransform.sizeDelta = new Vector2(temp, height);
 
         if (health <= 0)
         {

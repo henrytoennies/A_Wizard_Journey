@@ -14,6 +14,7 @@ public class Boss : MonoBehaviour
     public Vector3[] attackPoints;
     public Image healthBar;
     public GameObject grassBomb;
+    public GameObject boomerang;
     public GameObject pointer;
     
     [Header("Set Dynamically")]
@@ -22,9 +23,15 @@ public class Boss : MonoBehaviour
     public float attackID;
     public int numberOfAttacks;
     public Renderer render;
+    public Rigidbody rigid;
     public bool doingWaterAttack = false;
+    public bool doingGrassAttack = false;
+    public float attackAngle;
+    public float attackDelay;
+    public Vector3 velocity;
     
     private float maxHealth, height, width, growthRate;
+    private bool attackUp;
 
     private int i = 0;
 
@@ -45,6 +52,8 @@ public class Boss : MonoBehaviour
         maxHealth = health;
         width = healthBar.rectTransform.rect.width;
         height = healthBar.rectTransform.rect.height;
+        rigid = GetComponent<Rigidbody>();
+        velocity = rigid.linearVelocity;
     }
 
     // Update is called once per frame
@@ -70,6 +79,28 @@ public class Boss : MonoBehaviour
                 Invoke("ElemSelect", 2);
             }
         }
+        
+        // if (doingGrassAttack)
+        // {
+        //     if (rigid.linearVelocity == velocity)
+        //     {
+        //         if (Random.Range(1,3) == 1)
+        //         {
+        //             rigid.linearVelocity = 5 * Vector3.up;
+        //         } else
+        //         {
+        //             rigid.linearVelocity = 5 * Vector3.down;
+        //         }
+        //     }
+            
+        //     if (transform.position.y >= 6)
+        //     {
+        //         rigid.linearVelocity = 5 * Vector3.down;
+        //     } else if (transform.position.y <= -6)
+        //     {
+        //         rigid.linearVelocity = 5 * Vector3.up;
+        //     }
+        // }
     }
 
 
@@ -160,15 +191,24 @@ public class Boss : MonoBehaviour
         pointer.transform.localScale = new Vector3(0.1f,0.25f,5);
         pointer.transform.localPosition = new Vector3(-0.25f,0,0);
         transform.rotation = Quaternion.Euler(0,0,0);
-        switch (Random.Range(1,4))
+        switch (3)//Random.Range(1,4))
         {
             case 1:
                 type = elemType.water;
                 def = Main.GetElemDef(elemType.water);
-                attackID = Random.Range(0,2);
+                attackID = Random.Range(0,4);
+                numberOfAttacks = 50;
                 if (attackID == 0)
                     attackID = -1;
-                transform.position = new Vector3(14,attackID * 6,0);
+                if (attackID == 2)
+                {
+                    attackAngle = 50;
+                    attackUp = true;
+                } else if (attackID == 3)
+                {
+                    attackAngle = -50;
+                    attackUp = false;
+                }
                 Invoke("WaterAttack", .5f);
                 break;
             case 2:
@@ -185,7 +225,7 @@ public class Boss : MonoBehaviour
                 def = Main.GetElemDef(elemType.grass);
                 transform.position = new Vector3(14,0,0);
                 // change for more attacks
-                attackID = Random.Range(1,1);
+                attackID = 2; //Random.Range(1,3);
                 numberOfAttacks = Random.Range(3,5);
                 Invoke("GrassAttack", 0.5f);
                 break;
@@ -242,6 +282,7 @@ public class Boss : MonoBehaviour
 
     void GrassAttack()
     {
+        GameObject go;
         switch (attackID)
         {
             case 1:
@@ -253,7 +294,7 @@ public class Boss : MonoBehaviour
 
                 transform.rotation = Quaternion.Euler(0,0,rotY);
 
-                GameObject go = Instantiate<GameObject>(grassBomb);
+                go = Instantiate<GameObject>(grassBomb);
                 
                 go.transform.position = transform.position;
                 
@@ -262,6 +303,23 @@ public class Boss : MonoBehaviour
                 bomb.attackPoint = attackPos;
                 
                 bomb.rigid.linearVelocity = Quaternion.Euler(0,0,rotY) * Vector3.left * def.velocity * 0.5f;
+                
+                attackDelay = 1f;
+                break;
+            case 2:
+                // doingGrassAttack = true;
+
+                // go = Instantiate(boomerang);
+
+                // go.transform.position = transform.position;
+
+                // GrassBoomerang rang = go.GetComponent<GrassBoomerang>();
+
+                // //rang.rigid.linearVelocity = Vector3.left * def.velocity * 0.5f;
+
+                // rang.type = elemType.grass;
+
+                // attackDelay = Random.Range(.5f,2f);
 
                 break;
 
@@ -271,12 +329,14 @@ public class Boss : MonoBehaviour
 
         if (i >= numberOfAttacks)
         {
+            doingGrassAttack = false;
+            rigid.linearVelocity = Vector3.zero;
             i = 0;
             Invoke("ElemSelect", 2);
         } else
         {
             i++;
-            Invoke("GrassAttack", 1f);
+            Invoke("GrassAttack", attackDelay);
         }
     }
     
@@ -286,8 +346,54 @@ public class Boss : MonoBehaviour
         {
             case -1:
             case 1:
+                transform.position = new Vector3(14,attackID * 6,0);
+
                 growthRate = 0.25f;
                 doingWaterAttack = true;
+                break;
+            case 2:
+            case 3:
+                transform.position = new Vector3(14,0,0);
+                
+                transform.rotation = Quaternion.Euler(0,0,attackAngle);
+                
+                Projectile p = MakeProjectile();
+                p.rigid.linearVelocity =  Quaternion.Euler(0,0,attackAngle) * Vector3.left * def.velocity * 0.5f;
+
+                // if (attackAngle % 50 == 0)
+                // {
+                //     if (attackUp) 
+                //         attackAngle -= 15;
+                //     else 
+                //         attackAngle += 15;
+                /*} else*/ if (attackUp)
+                {
+                    attackAngle -= 10;
+                } else
+                {
+                    attackAngle += 10;
+                }
+
+                if (attackAngle >= 50)
+                {
+                    attackUp = true;
+                    attackAngle -= 5;
+                }
+                else if (attackAngle <= -50)
+                {
+                    attackUp = false;
+                    attackAngle += 5;
+                }
+
+                if (i >= numberOfAttacks)
+                {
+                    i = 0;
+                    Invoke("ElemSelect", 2);
+                } else
+                {
+                    i++;
+                    Invoke("WaterAttack", .1f);
+                }
                 break;
             default:
                 break;
@@ -309,11 +415,23 @@ public class Boss : MonoBehaviour
         }
 
         go.transform.position = transform.position;
-        go.transform.localScale = new Vector3(.4f,.4f,.8f);
+
         Projectile p = go.GetComponent<Projectile>();
-        p.damage = def.damage;
+        p.damage = 2;
         p.render.material.color = def.projectileColor;
         p.type = type;
+
+        switch (p.type)
+        {
+            case elemType.fire:
+                p.transform.localScale = new Vector3(.4f,.4f,.8f);
+                break;
+            case elemType.water:
+                p.transform.localScale = new Vector3(1,1,1);
+                break;
+            default:
+                break;
+        }
 
         return p;
     }

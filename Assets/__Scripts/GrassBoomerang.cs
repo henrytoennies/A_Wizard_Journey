@@ -1,0 +1,72 @@
+using Unity.VisualScripting;
+using UnityEngine;
+
+public class GrassBoomerang : Projectile
+{
+    [Header("Set in Inspector")]
+    public float lifeTime;
+    
+    [Header("Set Dynamically")]
+    public elemDef def;
+    public Vector3[] points;
+    public float birthTime;
+    public Vector3 tempPos;
+
+
+    // public BoundsCheck bndCheck;
+
+    // Start is called before the first frame update
+    void Awake()
+    {
+        rigid = GetComponent<Rigidbody>();
+        render = GetComponent<Renderer>();
+        // bndCheck = GetComponent<BoundsCheck>();
+        
+        
+    }
+
+    void Start()
+    {
+        def = Main.GetElemDef(elemType.grass);
+        
+        birthTime = Time.time;
+
+        points = new Vector3[4];
+        points[0] = transform.position;
+        points[1] = new Vector3(Random.Range(-28f,-18f),Random.Range(-10f,10f),0);
+        points[2] = new Vector3(Random.Range(-28f,-18f),Random.Range(-10f,10f),0);
+        points[3] = new Vector3(-19,Random.Range(-10f,10f),0);
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        transform.Rotate(0,0,360 * Time.deltaTime);
+        
+        float t = (Time.time - birthTime) / lifeTime;
+
+        if (t > 1)
+        {
+            birthTime = Time.time;
+        }
+        float u = 1 - t;
+        float tt = t * t;
+        float uu = u * u;
+        float ttt = tt * t;
+        float uuu = uu * u;
+
+        print(t.ToString() + " = " + Time.time.ToString() + " - " + birthTime.ToString() + " / " + lifeTime.ToString());
+
+        tempPos = uuu * points[0];
+        tempPos += 3 * uu * t * points[1];
+        tempPos += 3 * u * tt * points[2];
+        tempPos += ttt * points[3];
+
+        transform.position = tempPos;
+        
+        // if (!bndCheck.isOnScreen)
+        // {
+        //     Destroy(gameObject);
+        // }
+    }
+}
