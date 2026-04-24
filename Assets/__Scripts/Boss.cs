@@ -25,12 +25,13 @@ public class Boss : MonoBehaviour
     public Renderer render;
     public Rigidbody rigid;
     public bool doingWaterAttack = false;
-    public bool doingGrassAttack = false;
+    public bool movingToCenter = false;
+    public Vector3 prevPos;
     public float attackAngle;
     public float attackDelay;
     public Vector3 velocity;
     
-    private float maxHealth, height, width, growthRate;
+    private float maxHealth, height, width, growthRate, timeStart;
     private bool attackUp;
 
     private int i = 0;
@@ -78,6 +79,22 @@ public class Boss : MonoBehaviour
                 doingWaterAttack = false;
                 Invoke("ElemSelect", 2);
             }
+        }
+
+        if (movingToCenter)
+        {
+            float t = (Time.time - timeStart) / 1f;
+
+            if (t >= 1)
+            {
+                t = 1;
+            }
+
+            Vector3 tempPos;
+
+            tempPos = (1 - t) * prevPos;
+
+            transform.position = tempPos;
         }
         
         // if (doingGrassAttack)
@@ -191,7 +208,7 @@ public class Boss : MonoBehaviour
         pointer.transform.localScale = new Vector3(0.1f,0.25f,5);
         pointer.transform.localPosition = new Vector3(-0.25f,0,0);
         transform.rotation = Quaternion.Euler(0,0,0);
-        switch (3)//Random.Range(1,4))
+        switch (Random.Range(1,4))
         {
             case 1:
                 type = elemType.water;
@@ -214,18 +231,28 @@ public class Boss : MonoBehaviour
             case 2:
                 type = elemType.fire;
                 def = Main.GetElemDef(elemType.fire);
-                transform.position = safePoints[Random.Range(0,safePoints.Length)];
                 // change for more attacks
-                attackID = Random.Range(1,1);
-                numberOfAttacks = Random.Range(5,10);
-                Invoke("FireAttack", .5f);
+                attackID = Random.Range(1,3);
+                if (attackID == 1)
+                {
+                    
+                    numberOfAttacks = Random.Range(5,11);
+                } else
+                {
+                    prevPos = transform.position;
+                    movingToCenter = true;
+                    timeStart = Time.time;
+                    numberOfAttacks = Random.Range(1,4);
+                    attackAngle = 0;
+                }
+                Invoke("FireAttack", 1f);
                 break;
             case 3:
                 type = elemType.grass;
                 def = Main.GetElemDef(elemType.grass);
                 transform.position = new Vector3(14,0,0);
                 // change for more attacks
-                attackID = 2; //Random.Range(1,3);
+                attackID = Random.Range(1,3);
                 numberOfAttacks = Random.Range(3,5);
                 Invoke("GrassAttack", 0.5f);
                 break;
@@ -238,16 +265,19 @@ public class Boss : MonoBehaviour
 
     void FireAttack()
     {
+        Projectile p;
         switch (attackID)
         {
             case 1:
+                transform.position = safePoints[Random.Range(0,safePoints.Length)];
+
                 float deltaX = transform.position.x - Wizard.S.transform.position.x;
                 float deltaY = transform.position.y - Wizard.S.transform.position.y;
                 float rotY = 180f / 3.14159f * Mathf.Atan2(deltaY, deltaX);
 
                 transform.rotation = Quaternion.Euler(0,0,rotY);
                 
-                Projectile p = MakeProjectile();
+                p = MakeProjectile();
                 p.transform.rotation = Quaternion.Euler(-rotY, 45, 45 + rotY);
                 p.rigid.linearVelocity =  Quaternion.Euler(0,0,rotY) * Vector3.left * def.velocity * 0.5f;
                 p = MakeProjectile();
@@ -263,36 +293,60 @@ public class Boss : MonoBehaviour
                 p.transform.rotation = Quaternion.Euler(-rotY - 30, 45, 45 + rotY + 30);
                 p.rigid.linearVelocity =  Quaternion.Euler(0,0,rotY + 30) * Vector3.left * def.velocity * 0.5f;
                 
+                if (i >= numberOfAttacks)
+                {
+                    i = 0;
+                    Invoke("ElemSelect", 2);
+                } else
+                {
+                    i++;
+                    Invoke("FireAttack", 0.5f);
+                }
+                break;
 
+            case 2:
+                
+                transform.rotation = Quaternion.Euler(0,0,attackAngle);
+                
+                p = MakeProjectile();
+                p.rigid.linearVelocity = Quaternion.Euler(0,0,attackAngle) * Vector3.left * def.velocity * 0.5f;
+                p = MakeProjectile();
+                p.rigid.linearVelocity = Quaternion.Euler(0,0,attackAngle) * Vector3.right * def.velocity * 0.5f;
+
+                attackAngle += 6;
+
+                if (i >= (numberOfAttacks * 60))
+                {
+                    i = 0;
+                    Invoke("ElemSelect", 2);
+                    movingToCenter = false;
+                } else
+                {
+                    i++;
+                    Invoke("FireAttack", 0.1f);
+                }
                 break;
             default:
                 break;
-        }
-
-        if (i >= numberOfAttacks)
-        {
-            i = 0;
-            Invoke("ElemSelect", 2);
-        } else
-        {
-            i++;
-            Invoke("FireAttack", 0.5f);
         }
     }
 
     void GrassAttack()
     {
         GameObject go;
+        float deltaX;
+        float deltaY;
+        float rot;
         switch (attackID)
         {
             case 1:
                 Vector3 attackPos = attackPoints[Random.Range(0,attackPoints.Length)];
                 
-                float deltaX = transform.position.x - attackPos.x;
-                float deltaY = transform.position.y - attackPos.y;
-                float rotY = 180f / 3.14159f * Mathf.Atan2(deltaY, deltaX);
+                deltaX = transform.position.x - attackPos.x;
+                deltaY = transform.position.y - attackPos.y;
+                rot = 180f / 3.14159f * Mathf.Atan2(deltaY, deltaX);
 
-                transform.rotation = Quaternion.Euler(0,0,rotY);
+                transform.rotation = Quaternion.Euler(0,0,rot);
 
                 go = Instantiate<GameObject>(grassBomb);
                 
@@ -302,24 +356,28 @@ public class Boss : MonoBehaviour
 
                 bomb.attackPoint = attackPos;
                 
-                bomb.rigid.linearVelocity = Quaternion.Euler(0,0,rotY) * Vector3.left * def.velocity * 0.5f;
+                bomb.rigid.linearVelocity = Quaternion.Euler(0,0,rot) * Vector3.left * def.velocity * 0.5f;
                 
                 attackDelay = 1f;
                 break;
             case 2:
-                // doingGrassAttack = true;
+                go = Instantiate(boomerang);
 
-                // go = Instantiate(boomerang);
+                go.transform.position = transform.position;
 
-                // go.transform.position = transform.position;
+                GrassBoomerang rang = go.GetComponent<GrassBoomerang>();
 
-                // GrassBoomerang rang = go.GetComponent<GrassBoomerang>();
+                rang.points[0] = transform.position;
 
-                // //rang.rigid.linearVelocity = Vector3.left * def.velocity * 0.5f;
+                rang.type = elemType.grass;
 
-                // rang.type = elemType.grass;
+                deltaX = transform.position.x - rang.points[1].x;
+                deltaY = transform.position.y - rang.points[1].y;
+                rot = 180f / 3.14159f * Mathf.Atan2(deltaY, deltaX);
 
-                // attackDelay = Random.Range(.5f,2f);
+                transform.rotation = Quaternion.Euler(0,0,rot);
+
+                attackDelay = 2f;
 
                 break;
 
@@ -329,7 +387,6 @@ public class Boss : MonoBehaviour
 
         if (i >= numberOfAttacks)
         {
-            doingGrassAttack = false;
             rigid.linearVelocity = Vector3.zero;
             i = 0;
             Invoke("ElemSelect", 2);
@@ -360,13 +417,7 @@ public class Boss : MonoBehaviour
                 Projectile p = MakeProjectile();
                 p.rigid.linearVelocity =  Quaternion.Euler(0,0,attackAngle) * Vector3.left * def.velocity * 0.5f;
 
-                // if (attackAngle % 50 == 0)
-                // {
-                //     if (attackUp) 
-                //         attackAngle -= 15;
-                //     else 
-                //         attackAngle += 15;
-                /*} else*/ if (attackUp)
+                if (attackUp)
                 {
                     attackAngle -= 10;
                 } else

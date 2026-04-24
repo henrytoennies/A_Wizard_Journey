@@ -11,7 +11,7 @@ public class Projectile : MonoBehaviour
     public Renderer render;
     public elemType type;
 
-    private BoundsCheck bndCheck;
+    protected BoundsCheck bndCheck;
     
 
 

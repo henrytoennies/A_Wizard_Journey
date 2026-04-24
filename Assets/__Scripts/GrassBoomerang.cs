@@ -20,14 +20,7 @@ public class GrassBoomerang : Projectile
     {
         rigid = GetComponent<Rigidbody>();
         render = GetComponent<Renderer>();
-        // bndCheck = GetComponent<BoundsCheck>();
-        
-        
-    }
-
-    void Start()
-    {
-        def = Main.GetElemDef(elemType.grass);
+        bndCheck = GetComponent<BoundsCheck>();
         
         birthTime = Time.time;
 
@@ -35,7 +28,12 @@ public class GrassBoomerang : Projectile
         points[0] = transform.position;
         points[1] = new Vector3(Random.Range(-28f,-18f),Random.Range(-10f,10f),0);
         points[2] = new Vector3(Random.Range(-28f,-18f),Random.Range(-10f,10f),0);
-        points[3] = new Vector3(-19,Random.Range(-10f,10f),0);
+        points[3] = new Vector3(20,Random.Range(-10f,10f),0);
+    }
+
+    void Start()
+    {
+        def = Main.GetElemDef(elemType.grass);
     }
 
     // Update is called once per frame
@@ -55,8 +53,6 @@ public class GrassBoomerang : Projectile
         float ttt = tt * t;
         float uuu = uu * u;
 
-        print(t.ToString() + " = " + Time.time.ToString() + " - " + birthTime.ToString() + " / " + lifeTime.ToString());
-
         tempPos = uuu * points[0];
         tempPos += 3 * uu * t * points[1];
         tempPos += 3 * u * tt * points[2];
@@ -64,9 +60,9 @@ public class GrassBoomerang : Projectile
 
         transform.position = tempPos;
         
-        // if (!bndCheck.isOnScreen)
-        // {
-        //     Destroy(gameObject);
-        // }
+        if (!bndCheck.isOnScreen)
+        {
+            Destroy(gameObject);
+        }
     }
 }
