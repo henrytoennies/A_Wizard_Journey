@@ -18,7 +18,7 @@ public class Boss : MonoBehaviour
     public GameObject pointer;
     
     [Header("Set Dynamically")]
-    public elemType type = elemType.water;
+    public elemType type;
     public elemDef def;
     public float attackID;
     public int numberOfAttacks;
@@ -33,6 +33,7 @@ public class Boss : MonoBehaviour
     
     private float maxHealth, height, width, growthRate, timeStart;
     private bool attackUp;
+    private string attackChoise;
 
     private int i = 0;
 
@@ -96,28 +97,6 @@ public class Boss : MonoBehaviour
 
             transform.position = tempPos;
         }
-        
-        // if (doingGrassAttack)
-        // {
-        //     if (rigid.linearVelocity == velocity)
-        //     {
-        //         if (Random.Range(1,3) == 1)
-        //         {
-        //             rigid.linearVelocity = 5 * Vector3.up;
-        //         } else
-        //         {
-        //             rigid.linearVelocity = 5 * Vector3.down;
-        //         }
-        //     }
-            
-        //     if (transform.position.y >= 6)
-        //     {
-        //         rigid.linearVelocity = 5 * Vector3.down;
-        //     } else if (transform.position.y <= -6)
-        //     {
-        //         rigid.linearVelocity = 5 * Vector3.up;
-        //     }
-        // }
     }
 
 
@@ -211,8 +190,15 @@ public class Boss : MonoBehaviour
         switch (Random.Range(1,4))
         {
             case 1:
+                if(type == elemType.water) 
+                {
+                    attackChoise = "ElemSelect";
+                    break;
+                }
+
                 type = elemType.water;
                 def = Main.GetElemDef(elemType.water);
+
                 attackID = Random.Range(0,4);
                 numberOfAttacks = 50;
                 if (attackID == 0)
@@ -226,11 +212,18 @@ public class Boss : MonoBehaviour
                     attackAngle = -50;
                     attackUp = false;
                 }
-                Invoke("WaterAttack", .5f);
+                attackChoise = "WaterAttack";
                 break;
             case 2:
+                if(type == elemType.fire) 
+                {
+                    attackChoise = "ElemSelect";
+                    break;
+                }
+
                 type = elemType.fire;
                 def = Main.GetElemDef(elemType.fire);
+
                 // change for more attacks
                 attackID = Random.Range(1,3);
                 if (attackID == 1)
@@ -245,21 +238,29 @@ public class Boss : MonoBehaviour
                     numberOfAttacks = Random.Range(1,4);
                     attackAngle = 0;
                 }
-                Invoke("FireAttack", 1f);
+                attackChoise = "FireAttack";
                 break;
             case 3:
+                if(type == elemType.grass) 
+                {
+                    attackChoise = "ElemSelect";
+                    break;
+                }
+
                 type = elemType.grass;
                 def = Main.GetElemDef(elemType.grass);
+
                 transform.position = new Vector3(14,0,0);
                 // change for more attacks
                 attackID = Random.Range(1,3);
-                numberOfAttacks = Random.Range(3,5);
-                Invoke("GrassAttack", 0.5f);
+                numberOfAttacks = Random.Range(3,6);
+                attackChoise = "GrassAttack";
                 break;
             default:
                 break;
         }
 
+        Invoke(attackChoise, 1f);
         render.material.color = def.color;
     }
 
@@ -357,8 +358,7 @@ public class Boss : MonoBehaviour
                 bomb.attackPoint = attackPos;
                 
                 bomb.rigid.linearVelocity = Quaternion.Euler(0,0,rot) * Vector3.left * def.velocity * 0.5f;
-                
-                attackDelay = 1f;
+
                 break;
             case 2:
                 go = Instantiate(boomerang);
@@ -377,23 +377,21 @@ public class Boss : MonoBehaviour
 
                 transform.rotation = Quaternion.Euler(0,0,rot);
 
-                attackDelay = 2f;
-
                 break;
 
             default:
                 break;
         }
 
+        
         if (i >= numberOfAttacks)
         {
-            rigid.linearVelocity = Vector3.zero;
             i = 0;
             Invoke("ElemSelect", 2);
         } else
         {
             i++;
-            Invoke("GrassAttack", attackDelay);
+            Invoke("GrassAttack", 1f);
         }
     }
     

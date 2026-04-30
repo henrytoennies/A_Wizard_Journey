@@ -26,8 +26,8 @@ public class GrassBoomerang : Projectile
 
         points = new Vector3[4];
         points[0] = transform.position;
-        points[1] = new Vector3(Random.Range(-28f,-18f),Random.Range(-10f,10f),0);
-        points[2] = new Vector3(Random.Range(-28f,-18f),Random.Range(-10f,10f),0);
+        points[1] = new Vector3(Random.Range(-30f,-18f),Random.Range(-20f,20f),0);
+        points[2] = new Vector3(Random.Range(-30f,-18f),Random.Range(-20f,20f),0);
         points[3] = new Vector3(20,Random.Range(-10f,10f),0);
     }
 
@@ -43,10 +43,6 @@ public class GrassBoomerang : Projectile
         
         float t = (Time.time - birthTime) / lifeTime;
 
-        if (t > 1)
-        {
-            birthTime = Time.time;
-        }
         float u = 1 - t;
         float tt = t * t;
         float uu = u * u;
